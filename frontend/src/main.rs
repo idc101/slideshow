@@ -1,20 +1,24 @@
 use yew::prelude::*;
+use yew_hooks::use_interval;
 
 #[function_component]
 fn App() -> Html {
-    let counter = use_state(|| 0);
-    let onclick = {
-        let counter = counter.clone();
-        move |_| {
-            let value = *counter + 1;
-            counter.set(value);
-        }
-    };
+    let time_string = use_state(|| "".to_string());
+
+    {
+        let time_string = time_string.clone();
+        use_interval(
+            move || {
+                time_string.set(chrono::Local::now().format("%H:%M:%S").to_string());
+            },
+            1000,
+        )
+    }
 
     html! {
-        <div>
-            <button {onclick}>{ "+1" }</button>
-            <p>{ *counter }</p>
+        <div id="imageContainer">
+            <div id="clock"><p>{ <std::string::String as Clone>::clone(&*time_string) }</p></div>
+            <img src="/image" />
         </div>
     }
 }

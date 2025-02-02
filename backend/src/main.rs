@@ -39,8 +39,12 @@ fn index() -> String {
 #[get("/image")]
 pub async fn image() -> NamedFile {
     let images: Vec<Result<fs::DirEntry, std::io::Error>> =
-        fs::read_dir("/Users/iain/tmp/christmas").unwrap().collect();
+        fs::read_dir("/Users/iain/Mylio/Apple Photos/Iains iPhone Library")
+            .unwrap()
+            .filter(|x| x.as_ref().unwrap().path().extension().unwrap() == "jpg")
+            .collect();
     let image = images[2].as_ref().unwrap().path();
+    println!("{}", image.display());
 
     NamedFile::open(image).await.ok().unwrap()
 }
