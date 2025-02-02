@@ -6,5 +6,6 @@ edition = "2021"
 
 [dependencies]
 chrono = "0.4.39"
+tokio = "1.43.0"
 yew = { version = "0.21.0", features = ["csr"] }
 yew-hooks = "0.3.3"

@@ -1,16 +1,39 @@
 use std::fs;
-
-use rocket::fs::{relative, NamedFile};
 use std::path::{Path, PathBuf};
+use std::sync::{Arc, Mutex};
 
-use rocket::{get, launch, routes};
-
+use rocket::fs::{FileServer, NamedFile};
 use rocket::serde::Deserialize;
+use rocket::{get, routes, State};
 
-use rocket::fs::FileServer;
+use rocket::tokio;
+use tokio::time::{interval, Duration};
 
-#[macro_use]
-extern crate rocket;
+// #[macro_use]
+// extern crate rocket;
+
+// Your state structure
+struct AppState {
+    counter: Mutex<i32>,
+    // other fields...
+}
+
+async fn background_task(state: Arc<AppState>) {
+    let mut interval = interval(Duration::from_secs(2)); // 5 minutes = 300 seconds
+
+    loop {
+        interval.tick().await;
+        // Your code here
+        println!("Running background task...");
+        *state.counter.lock().unwrap() += 1;
+    }
+}
+
+#[get("/test")]
+fn test(state: &State<Arc<AppState>>) -> String {
+    let count = state.counter.lock().unwrap();
+    format!("Counter: {}", count)
+}
 
 #[get("/")]
 fn index() -> String {
@@ -49,8 +72,8 @@ pub async fn image() -> NamedFile {
     NamedFile::open(image).await.ok().unwrap()
 }
 
-#[launch]
-fn rocket() -> _ {
+#[rocket::main]
+async fn main() -> Result<(), rocket::Error> {
     #[derive(Deserialize)]
     #[serde(crate = "rocket::serde")]
     struct Config {
@@ -65,10 +88,27 @@ fn rocket() -> _ {
         }
     }
 
+    let app_state = Arc::new(AppState {
+        counter: Mutex::new(0),
+    });
+    let state_clone = app_state.clone();
+
     let rocket = rocket::build();
     let config: Config = rocket.figment().extract().unwrap_or_default();
 
-    rocket
-        .mount("/", routes![image])
+    let rocket = rocket
+        .manage(app_state)
+        .mount("/", routes![image, test])
         .mount("/", FileServer::from(config.dist))
+        .ignite()
+        .await?;
+
+    // Spawn the background task
+    rocket::tokio::spawn(async move {
+        background_task(state_clone).await;
+    });
+
+    rocket.launch().await?;
+
+    Ok(())
 }
