@@ -17,7 +17,7 @@ fn App() -> Html {
 
     html! {
         <div id="imageContainer">
-            <div id="clock"><p>{ <std::string::String as Clone>::clone(&*time_string) }</p></div>
+            <div id="clock">{ <std::string::String as Clone>::clone(&*time_string) }</div>
             <img src="/image" />
         </div>
     }
