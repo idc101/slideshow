@@ -1,15 +1,28 @@
+use gloo_net::http::Request;
+use serde::{Deserialize, Serialize};
+use wasm_bindgen_futures::spawn_local;
+use web_sys::HtmlInputElement;
 use yew::prelude::*;
 use yew_hooks::use_interval;
+use yew_router::prelude::*;
+
+#[derive(Clone, Routable, PartialEq)]
+enum Route {
+    #[at("/")]
+    Home,
+    #[at("/settings")]
+    Settings,
+}
 
 #[function_component]
-fn App() -> Html {
+fn Home() -> Html {
     let time_string = use_state(|| "".to_string());
 
     {
         let time_string = time_string.clone();
         use_interval(
             move || {
-                time_string.set(chrono::Local::now().format("%H:%M:%S").to_string());
+                time_string.set(chrono::Local::now().format("%H:%M").to_string());
             },
             1000,
         )
@@ -18,8 +31,147 @@ fn App() -> Html {
     html! {
         <div id="imageContainer">
             <div id="clock">{ <std::string::String as Clone>::clone(&*time_string) }</div>
-            <img src="/image" />
+            <img src="/api/image" />
         </div>
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+struct Item {
+    name: String,
+    interval: i32,
+}
+
+#[function_component]
+fn Settings() -> Html {
+    // let items = use_state(|| Vec::new());
+    // let name_ref = use_node_ref();
+    // let interval_ref = use_node_ref();
+
+    // // Fetch items on component mount
+    // {
+    //     let items = items.clone();
+    //     use_effect_with_deps(
+    //         move |_| {
+    //             spawn_local(async move {
+    //                 let fetched_items: Vec<Item> = Request::get("/items")
+    //                     .send()
+    //                     .await
+    //                     .unwrap()
+    //                     .json()
+    //                     .await
+    //                     .unwrap();
+    //                 items.set(fetched_items);
+    //             });
+    //             || ()
+    //         },
+    //         (),
+    //     );
+    // }
+
+    // let onsubmit = {
+    //     let items = items.clone();
+    //     let name_ref = name_ref.clone();
+    //     let interval_ref = interval_ref.clone();
+
+    //     Callback::from(move |e: SubmitEvent| {
+    //         e.prevent_default();
+    //         let items = items.clone();
+    //         let name = name_ref.cast::<HtmlInputElement>().unwrap().value();
+    //         let interval = interval_ref
+    //             .cast::<HtmlInputElement>()
+    //             .unwrap()
+    //             .value()
+    //             .parse::<i32>()
+    //             .unwrap_or(0);
+
+    //         // Create new item
+    //         let new_item = Item { name, interval };
+
+    //         spawn_local(async move {
+    //             let created_item: Item = Request::post("/items")
+    //                 .json(&new_item)
+    //                 .unwrap()
+    //                 .send()
+    //                 .await
+    //                 .unwrap()
+    //                 .json()
+    //                 .await
+    //                 .unwrap();
+
+    //             // Update local state
+    //             let mut current_items = (*items).clone();
+    //             current_items.push(created_item);
+    //             items.set(current_items);
+    //         });
+    //     })
+    // };
+
+    html! {
+        <h1>{"Hello"}</h1>
+        // <div class="container">
+        //     <h1>{"Item Manager"}</h1>
+
+        //     // Form
+        //     <form onsubmit={onsubmit}>
+        //         <div class="form-group">
+        //             <label for="name">{"Name:"}</label>
+        //             <input
+        //                 type="text"
+        //                 id="name"
+        //                 ref={name_ref.clone()}
+        //                 required=true
+        //             />
+        //         </div>
+
+        //         <div class="form-group">
+        //             <label for="interval">{"Interval:"}</label>
+        //             <input
+        //                 type="number"
+        //                 id="interval"
+        //                 ref={interval_ref.clone()}
+        //                 required=true
+        //                 min="1"
+        //             />
+        //         </div>
+
+        //         <button type="submit">{"Add Item"}</button>
+        //     </form>
+
+        //     // Display items
+        //     <div class="items-list">
+        //         <h2>{"Items"}</h2>
+        //         <ul>
+        //             {(*items).iter().map(|item| {
+        //                 html! {
+        //                     <li>
+        //                         {format!("Name: {}, Interval: {}", item.name, item.interval)}
+        //                     </li>
+        //                 }
+        //             }).collect::<Html>()}
+        //         </ul>
+        //     </div>
+        // </div>
+    }
+}
+
+fn switch(routes: Route) -> Html {
+    match routes {
+        Route::Home => html! {
+            <Home />
+        },
+        Route::Settings => html! {
+            <Settings />
+        },
+    }
+}
+
+#[function_component]
+fn App() -> Html {
+    html! {
+        <BrowserRouter>
+            <Switch<Route> render={switch} /> // <- must be child of <BrowserRouter>
+        </BrowserRouter>
     }
 }
 
