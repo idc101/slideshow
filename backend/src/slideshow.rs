@@ -1,13 +1,21 @@
 use std::sync::Mutex;
 
 use rand::seq::IndexedRandom;
+use serde::{Deserialize, Serialize};
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 pub struct AppState {
     all_images: Mutex<Vec<PathBuf>>,
     counter: Mutex<i32>,
-    // other fields...
+    pub settings: Mutex<Settings>,
+}
+
+// Define the data structure
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Settings {
+    slideshow: String,
+    interval: i32,
 }
 
 impl AppState {
@@ -15,6 +23,10 @@ impl AppState {
         let new = Self {
             all_images: Mutex::new(Vec::new()),
             counter: Mutex::new(0),
+            settings: Mutex::new(Settings {
+                slideshow: "slideshow".to_string(),
+                interval: 1000,
+            }),
         };
         new.set_path();
         new

@@ -1,16 +1,17 @@
-use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use rocket::fs::{FileServer, NamedFile};
+use rocket::response::status::NotFound;
+use rocket::serde::json::Json;
 use rocket::serde::Deserialize;
-use rocket::{get, routes, State};
+use rocket::{catch, catchers, get, post, routes, Request, State};
 
 use rocket::tokio;
 use tokio::time::{interval, Duration};
 
 mod slideshow;
-use slideshow::AppState;
+use slideshow::{AppState, Settings};
 
 async fn background_task(state: Arc<AppState>) {
     let mut interval = interval(Duration::from_secs(2)); // 5 minutes = 300 seconds
@@ -18,7 +19,6 @@ async fn background_task(state: Arc<AppState>) {
     loop {
         interval.tick().await;
         // Your code here
-        println!("Running background task...");
         state.increment();
     }
 }
@@ -29,12 +29,34 @@ fn test(state: &State<Arc<AppState>>) -> String {
     format!("Counter: {}", count)
 }
 
+// GET endpoint to retrieve all settings
+#[get("/settings")]
+fn get_settings(state: &State<Arc<AppState>>) -> Json<Settings> {
+    let items = state.settings.lock().unwrap();
+    Json(items.clone())
+}
+
+// POST endpoint to add a new item
+#[post("/settings", format = "json", data = "<new_settings>")]
+fn update_settings(new_settings: Json<Settings>, state: &State<Arc<AppState>>) -> String {
+    let mut settings = state.settings.lock().unwrap();
+    *settings = new_settings.into_inner();
+    "Ok".to_string()
+}
+
 #[get("/image")]
 pub async fn image(state: &State<Arc<AppState>>) -> NamedFile {
     let image = state.get_current_image();
     println!("{}", image.display());
 
     NamedFile::open(image).await.ok().unwrap()
+}
+
+#[catch(404)]
+async fn not_found(_: &Request<'_>) -> Result<NamedFile, NotFound<String>> {
+    NamedFile::open(Path::new("static/dist/index.html"))
+        .await
+        .map_err(|e| NotFound(e.to_string()))
 }
 
 #[rocket::main]
@@ -61,8 +83,9 @@ async fn main() -> Result<(), rocket::Error> {
 
     let rocket = rocket
         .manage(app_state)
-        .mount("/", routes![image, test])
+        .mount("/api", routes![image, test, get_settings, update_settings])
         .mount("/", FileServer::from(config.dist))
+        .register("/", catchers![not_found])
         .ignite()
         .await?;
 
