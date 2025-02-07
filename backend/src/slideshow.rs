@@ -25,7 +25,7 @@ impl AppState {
             counter: Mutex::new(0),
             settings: Mutex::new(Settings {
                 slideshow: "slideshow".to_string(),
-                interval: 1000,
+                interval: 10,
             }),
         };
         new.set_path();
@@ -45,6 +45,11 @@ impl AppState {
     pub fn get_current_image(&self) -> PathBuf {
         let images = self.all_images.lock().unwrap();
         images.choose(&mut rand::rng()).unwrap().clone()
+    }
+
+    pub fn get_image(&self, num: i32) -> PathBuf {
+        let images = self.all_images.lock().unwrap();
+        images.get((num as usize) % images.len()).unwrap().clone()
     }
 
     pub fn increment(&self) {

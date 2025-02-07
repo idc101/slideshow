@@ -1,5 +1,5 @@
 use gloo_net::http::Request;
-use serde::{Deserialize, Serialize};
+use serde::{de::Expected, Deserialize, Serialize};
 use wasm_bindgen_futures::spawn_local;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
@@ -17,12 +17,15 @@ enum Route {
 #[function_component]
 fn Home() -> Html {
     let time_string = use_state(|| "".to_string());
+    let image_num = use_state(|| 0);
 
     {
         let time_string = time_string.clone();
+        let image_num = image_num.clone();
         use_interval(
             move || {
                 time_string.set(chrono::Local::now().format("%H:%M").to_string());
+                image_num.set((chrono::Local::now().timestamp() as i32) / 10);
             },
             1000,
         )
@@ -31,7 +34,7 @@ fn Home() -> Html {
     html! {
         <div id="imageContainer">
             <div id="clock">{ <std::string::String as Clone>::clone(&*time_string) }</div>
-            <img src="/api/image" />
+            <img src={format!("/api/image/{}", *image_num)} />
         </div>
     }
 }
