@@ -1,6 +1,8 @@
 use std::sync::Mutex;
 
 use rand::seq::IndexedRandom;
+use regex::Regex;
+use rexiv2::Metadata;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
@@ -35,9 +37,17 @@ impl AppState {
     pub fn set_path(&self) {
         //self.all_images.lock().unwrap().clear();
         let mut images = self.all_images.lock().unwrap();
-        *images = fs::read_dir("/Users/iain/Mylio/Apple Photos/Iains iPhone Library")
+        *images = fs::read_dir("/Users/iain/tmp")
             .unwrap()
-            .filter(|x| x.as_ref().unwrap().path().extension().unwrap() == "jpg")
+            .filter(|x| {
+                x.as_ref()
+                    .unwrap()
+                    .path()
+                    .extension()
+                    .unwrap_or_default()
+                    .to_ascii_lowercase()
+                    == "jpg"
+            })
             .map(|x| x.unwrap().path())
             .collect();
     }
@@ -50,6 +60,18 @@ impl AppState {
     pub fn get_image(&self, num: i32) -> PathBuf {
         let images = self.all_images.lock().unwrap();
         images.get((num as usize) % images.len()).unwrap().clone()
+    }
+
+    pub fn get_image_metadata(&self, num: i32) -> Option<String> {
+        let path = self.get_image(num);
+        let metadata = Metadata::new_from_path(path).unwrap();
+        // Get XMP subject
+        if let Ok(subjects) = metadata.get_tag_multiple_strings("Xmp.dc.subject") {
+            let re = Regex::new(r"\d+-.*").unwrap();
+            subjects.iter().filter(|x| re.is_match(x)).next().cloned()
+        } else {
+            None
+        }
     }
 
     pub fn increment(&self) {

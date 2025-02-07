@@ -52,6 +52,12 @@ pub async fn image(num: i32, state: &State<Arc<AppState>>) -> NamedFile {
     NamedFile::open(image).await.ok().unwrap()
 }
 
+#[get("/image/<num>/metadata")]
+pub async fn image_metadata(num: i32, state: &State<Arc<AppState>>) -> String {
+    let image = state.get_image_metadata(num);
+    image.unwrap_or_default()
+}
+
 #[catch(404)]
 async fn not_found(_: &Request<'_>) -> Result<NamedFile, NotFound<String>> {
     NamedFile::open(Path::new("static/dist/index.html"))
@@ -83,7 +89,10 @@ async fn main() -> Result<(), rocket::Error> {
 
     let rocket = rocket
         .manage(app_state)
-        .mount("/api", routes![image, test, get_settings, update_settings])
+        .mount(
+            "/api",
+            routes![image, image_metadata, get_settings, update_settings],
+        )
         .mount("/", FileServer::from(config.dist))
         .register("/", catchers![not_found])
         .ignite()

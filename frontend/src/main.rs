@@ -35,6 +35,7 @@ fn Home() -> Html {
         <div id="imageContainer">
             <div id="clock">{ <std::string::String as Clone>::clone(&*time_string) }</div>
             <img src={format!("/api/image/{}", *image_num)} />
+            <Metadata num={*image_num} />
         </div>
     }
 }
@@ -155,6 +156,40 @@ fn Settings() -> Html {
         //         </ul>
         //     </div>
         // </div>
+    }
+}
+
+#[derive(Properties, PartialEq)]
+pub struct MetadataProps {
+    pub num: i32,
+}
+
+#[function_component]
+fn Metadata(props: &MetadataProps) -> Html {
+    let metadata = use_state(|| String::from(""));
+
+    // Fetch items on component mount
+    {
+        let metadata = metadata.clone();
+        let num = props.num.clone();
+        use_effect_with(num, move |_| {
+            spawn_local(async move {
+                let fetched: String = Request::get(format!("/api/image/{}/metadata", num).as_str())
+                    .send()
+                    .await
+                    .unwrap()
+                    .text()
+                    .await
+                    .unwrap();
+                metadata.set(fetched);
+            });
+        });
+    }
+
+    html! {
+        <div id="metadata">
+            {(*metadata.clone()).as_str()}
+        </div>
     }
 }
 
