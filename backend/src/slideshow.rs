@@ -27,7 +27,7 @@ impl AppState {
             counter: Mutex::new(0),
             settings: Mutex::new(Settings {
                 slideshow: "slideshow".to_string(),
-                interval: 10,
+                interval: 300,
             }),
         };
         new.set_path();
@@ -37,7 +37,7 @@ impl AppState {
     pub fn set_path(&self) {
         //self.all_images.lock().unwrap().clear();
         let mut images = self.all_images.lock().unwrap();
-        *images = fs::read_dir("/Users/iain/tmp")
+        *images = fs::read_dir(std::env::var("PICTURES_BASE").unwrap())
             .unwrap()
             .filter(|x| {
                 x.as_ref()
