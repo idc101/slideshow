@@ -11,21 +11,43 @@ enum Route {
     #[at("/")]
     Home,
     #[at("/settings")]
-    Settings,
+    SettingsForm,
 }
 
 #[function_component]
 fn Home() -> Html {
     let time_string = use_state(|| "".to_string());
+    let settings = use_state(|| Settings {
+        name: "".to_string(),
+        interval: 10,
+    });
     let image_num = use_state(|| 0);
+
+    // Fetch items on component mount
+    {
+        let settings = settings.clone();
+        use_effect(move || {
+            spawn_local(async move {
+                let fetched = Request::get(format!("/api/settings").as_str())
+                    .send()
+                    .await
+                    .unwrap()
+                    .json()
+                    .await
+                    .unwrap();
+                settings.set(fetched);
+            });
+        });
+    }
 
     {
         let time_string = time_string.clone();
         let image_num = image_num.clone();
+        let settings = settings.clone();
         use_interval(
             move || {
                 time_string.set(chrono::Local::now().format("%H:%M").to_string());
-                image_num.set((chrono::Local::now().timestamp() as i32) / 10);
+                image_num.set((chrono::Local::now().timestamp() as i32) / settings.interval);
             },
             1000,
         )
@@ -41,13 +63,13 @@ fn Home() -> Html {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-struct Item {
+struct Settings {
     name: String,
     interval: i32,
 }
 
 #[function_component]
-fn Settings() -> Html {
+fn SettingsForm() -> Html {
     // let items = use_state(|| Vec::new());
     // let name_ref = use_node_ref();
     // let interval_ref = use_node_ref();
@@ -198,8 +220,8 @@ fn switch(routes: Route) -> Html {
         Route::Home => html! {
             <Home />
         },
-        Route::Settings => html! {
-            <Settings />
+        Route::SettingsForm => html! {
+            <SettingsForm />
         },
     }
 }
