@@ -1,7 +1,7 @@
 use gloo_net::http::Request;
 use serde::{de::Expected, Deserialize, Serialize};
 use wasm_bindgen_futures::spawn_local;
-use web_sys::HtmlInputElement;
+use web_sys::{console, HtmlInputElement};
 use yew::prelude::*;
 use yew_hooks::use_interval;
 use yew_router::prelude::*;
@@ -17,39 +17,35 @@ enum Route {
 #[function_component]
 fn Home() -> Html {
     let time_string = use_state(|| "".to_string());
-    let settings = use_state(|| Settings {
-        name: "".to_string(),
-        interval: 10,
-    });
     let image_num = use_state(|| 0);
-
-    // Fetch items on component mount
-    {
-        let settings = settings.clone();
-        use_effect(move || {
-            spawn_local(async move {
-                let fetched = Request::get(format!("/api/settings").as_str())
-                    .send()
-                    .await
-                    .unwrap()
-                    .json()
-                    .await
-                    .unwrap();
-                settings.set(fetched);
-            });
-        });
-    }
 
     {
         let time_string = time_string.clone();
-        let image_num = image_num.clone();
-        let settings = settings.clone();
         use_interval(
             move || {
                 time_string.set(chrono::Local::now().format("%H:%M").to_string());
-                image_num.set((chrono::Local::now().timestamp() as i32) / settings.interval);
             },
             1000,
+        )
+    }
+
+    {
+        let image_num = image_num.clone();
+        use_interval(
+            move || {
+                let image_num = image_num.clone();
+                spawn_local(async move {
+                    let settings: Settings = Request::get(format!("/api/settings").as_str())
+                        .send()
+                        .await
+                        .unwrap()
+                        .json()
+                        .await
+                        .unwrap();
+                    image_num.set((chrono::Local::now().timestamp() as i32) / settings.interval);
+                });
+            },
+            30000,
         )
     }
 
@@ -64,7 +60,7 @@ fn Home() -> Html {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 struct Settings {
-    name: String,
+    slideshow: String,
     interval: i32,
 }
 
