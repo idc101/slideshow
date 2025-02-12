@@ -1,0 +1,10 @@
+services:
+  slideshow:
+    image: slideshow:latest
+    ports:
+      - "7071:8000"
+    volumes:
+      - /home/iain/data/photo/Pictures-Slideshows/family:/slideshows
+    restart: unless-stopped
+    environment:
+      PICTURES_BASE: /slideshows
