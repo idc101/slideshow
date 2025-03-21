@@ -54,8 +54,9 @@ pub async fn image(num: i32, state: &State<Arc<AppState>>) -> NamedFile {
 
 #[get("/image/<num>/metadata")]
 pub async fn image_metadata(num: i32, state: &State<Arc<AppState>>) -> String {
-    let image = state.get_image_metadata(num);
-    image.unwrap_or_default()
+    let metadata = state.get_image_metadata(num).unwrap_or_default();
+    println!("Metadata: {}", metadata);
+    metadata
 }
 
 #[catch(404)]

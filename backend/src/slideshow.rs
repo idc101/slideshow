@@ -1,3 +1,4 @@
+use std::f32::consts::PI;
 use std::sync::Mutex;
 
 use rand::seq::IndexedRandom;
@@ -64,14 +65,28 @@ impl AppState {
 
     pub fn get_image_metadata(&self, num: i32) -> Option<String> {
         let path = self.get_image(num);
-        let metadata = Metadata::new_from_path(path).unwrap();
+        let metadata = Metadata::new_from_path(path.clone()).unwrap();
         // Get XMP subject
         if let Ok(subjects) = metadata.get_tag_multiple_strings("Xmp.dc.subject") {
             let re = Regex::new(r"\d+-.*").unwrap();
-            subjects.iter().filter(|x| re.is_match(x)).next().cloned()
-        } else {
-            None
+            if let Some(subject) = subjects.iter().filter(|x| re.is_match(x)).next() {
+                return Some(subject.clone());
+            }
         }
+        if let Ok(date_time) = metadata.get_tag_string("Exif.Photo.DateTimeOriginal") {
+            if !date_time.is_empty() {
+                return Some(date_time);
+            }
+        }
+        if let Ok(date_time) = metadata.get_tag_string("Exif.Image.DateTime") {
+            if !date_time.is_empty() {
+                return Some(date_time);
+            }
+        }
+        return path
+            .file_name()
+            .map(|f| f.to_str().map(|s| s.to_string()))
+            .unwrap();
     }
 
     pub fn increment(&self) {
