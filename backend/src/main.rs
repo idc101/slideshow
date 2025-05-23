@@ -10,6 +10,9 @@ use rocket::{catch, catchers, get, post, routes, Request, State};
 use rocket::tokio;
 use tokio::time::{interval, Duration};
 
+#[cfg(windows)]
+mod windows_service;
+
 mod slideshow;
 use slideshow::{AppState, Settings};
 
