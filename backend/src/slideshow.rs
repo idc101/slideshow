@@ -1,7 +1,7 @@
 use std::sync::Mutex;
 
 use exif::Reader as ExifReader;
-use exif::Tag;
+use exif::{In, Tag};
 use rand::seq::IndexedRandom;
 use serde::{Deserialize, Serialize};
 use std::fs;
@@ -20,6 +20,12 @@ pub struct AppState {
 pub struct Settings {
     slideshow: String,
     pub interval: i32,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ImageMetadata {
+    pub date: Option<String>,
+    pub description: Option<String>,
 }
 
 impl AppState {
@@ -64,23 +70,33 @@ impl AppState {
         images.get((num as usize) % images.len()).unwrap().clone()
     }
 
-    pub fn get_image_metadata(&self, num: i32) -> Option<String> {
+    pub fn get_image_metadata(&self, num: i32) -> ImageMetadata {
         let path = self.get_image(num);
         let file = fs::File::open(path.clone()).unwrap();
         let mut bufreader = BufReader::new(file);
         let exifreader = ExifReader::new();
-        if let Ok(exif) = exifreader.read_from_container(&mut bufreader) {
-            if let Some(field) = exif.get_field(Tag::DateTimeOriginal, exif::In::PRIMARY) {
-                return Some(field.display_value().to_string());
-            }
-            if let Some(field) = exif.get_field(Tag::DateTime, exif::In::PRIMARY) {
-                return Some(field.display_value().to_string());
-            }
-        }
-        return path
+
+        let description = path
             .file_name()
             .map(|f| f.to_str().map(|s| s.to_string()))
-            .unwrap();
+            .flatten();
+
+        match exifreader.read_from_container(&mut bufreader) {
+            Ok(exif) => {
+                let date = exif
+                    .get_field(Tag::DateTimeOriginal, In::PRIMARY)
+                    .or(exif.get_field(Tag::DateTime, In::PRIMARY))
+                    .map(|field| field.display_value().to_string());
+
+                return ImageMetadata { date, description };
+            }
+            Err(_) => {
+                return ImageMetadata {
+                    date: None,
+                    description,
+                };
+            }
+        }
     }
 
     pub fn increment(&self) {

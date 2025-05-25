@@ -11,7 +11,7 @@ use rocket::tokio;
 use tokio::time::{interval, Duration};
 
 pub mod slideshow;
-use slideshow::{AppState, Settings};
+use slideshow::{AppState, ImageMetadata, Settings};
 
 async fn background_task(state: Arc<AppState>) {
     loop {
@@ -58,10 +58,17 @@ pub async fn image(num: i32, state: &State<Arc<AppState>>) -> NamedFile {
 }
 
 #[get("/image/<num>/metadata")]
-pub async fn image_metadata(num: i32, state: &State<Arc<AppState>>) -> String {
-    let metadata = state.get_image_metadata(num).unwrap_or_default();
-    println!("Metadata: {}", metadata);
-    metadata
+pub async fn image_metadata(num: i32, state: &State<Arc<AppState>>) -> Json<ImageMetadata> {
+    let metadata = state.get_image_metadata(num);
+    println!(
+        "Metadata: date={} description={}",
+        metadata.date.clone().unwrap_or(String::from("No Date")),
+        metadata
+            .description
+            .clone()
+            .unwrap_or(String::from("No Description"))
+    );
+    Json(metadata.clone())
 }
 
 #[catch(404)]
