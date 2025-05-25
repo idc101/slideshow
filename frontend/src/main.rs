@@ -1,7 +1,6 @@
 use gloo_net::http::Request;
-use serde::{de::Expected, Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 use wasm_bindgen_futures::spawn_local;
-use web_sys::{console, HtmlInputElement};
 use yew::prelude::*;
 use yew_hooks::use_interval;
 use yew_router::prelude::*;

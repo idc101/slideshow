@@ -1,10 +1,8 @@
-use std::f32::consts::PI;
 use std::sync::Mutex;
 
 use exif::Reader as ExifReader;
 use exif::Tag;
 use rand::seq::IndexedRandom;
-use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::io::BufReader;
