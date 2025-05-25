@@ -10,9 +10,6 @@ use rocket::{catch, catchers, get, post, routes, Request, State};
 use rocket::tokio;
 use tokio::time::{interval, Duration};
 
-#[cfg(windows)]
-mod windows_service;
-
 pub mod slideshow;
 use slideshow::{AppState, Settings};
 
@@ -84,13 +81,9 @@ pub async fn rocket() -> Result<(), rocket::Error> {
         }
     }
 
-    let app_state = AppState::new();
-    let pictures_base = std::env::var_os("PICTURES_BASE")
-        .map(|s| PathBuf::from(s))
-        .unwrap_or_else(|| PathBuf::from("rust-hw"));
-    app_state.set_path(pictures_base);
-    let app_state_wrapped = Arc::new(AppState::new());
-    let state_clone = app_state_wrapped.clone();
+    let app_state = Arc::new(AppState::new());
+    let state_clone = app_state.clone();
+    let state_clone2 = app_state.clone();
 
     let rocket = rocket::build();
     let config: Config = rocket.figment().extract().unwrap_or_default();
@@ -105,6 +98,11 @@ pub async fn rocket() -> Result<(), rocket::Error> {
         .register("/", catchers![not_found])
         .ignite()
         .await?;
+
+    let pictures_base = std::env::var_os("PICTURES_BASE")
+        .map(|s| PathBuf::from(s))
+        .unwrap_or_else(|| PathBuf::from("rust-hw"));
+    state_clone2.set_path(pictures_base);
 
     // Spawn the background task
     rocket::tokio::spawn(async move {
