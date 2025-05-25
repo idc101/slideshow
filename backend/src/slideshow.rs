@@ -1,11 +1,13 @@
 use std::f32::consts::PI;
 use std::sync::Mutex;
 
+use exif::Reader as ExifReader;
+use exif::Tag;
 use rand::seq::IndexedRandom;
 use regex::Regex;
-use rexiv2::Metadata;
 use serde::{Deserialize, Serialize};
 use std::fs;
+use std::io::BufReader;
 use std::path::PathBuf;
 
 pub struct AppState {
@@ -31,14 +33,14 @@ impl AppState {
                 interval: 300,
             }),
         };
-        new.set_path();
         new
     }
 
-    pub fn set_path(&self) {
-        //self.all_images.lock().unwrap().clear();
+    pub fn set_path(&self, pictures_base: PathBuf) {
         let mut images = self.all_images.lock().unwrap();
-        *images = fs::read_dir(std::env::var("PICTURES_BASE").unwrap())
+
+        images.clear();
+        *images = fs::read_dir(pictures_base)
             .unwrap()
             .filter(|x| {
                 x.as_ref()
@@ -65,22 +67,15 @@ impl AppState {
 
     pub fn get_image_metadata(&self, num: i32) -> Option<String> {
         let path = self.get_image(num);
-        let metadata = Metadata::new_from_path(path.clone()).unwrap();
-        // Get XMP subject
-        if let Ok(subjects) = metadata.get_tag_multiple_strings("Xmp.dc.subject") {
-            let re = Regex::new(r"\d+-.*").unwrap();
-            if let Some(subject) = subjects.iter().filter(|x| re.is_match(x)).next() {
-                return Some(subject.clone());
+        let file = fs::File::open(path.clone()).unwrap();
+        let mut bufreader = BufReader::new(file);
+        let exifreader = ExifReader::new();
+        if let Ok(exif) = exifreader.read_from_container(&mut bufreader) {
+            if let Some(field) = exif.get_field(Tag::DateTimeOriginal, exif::In::PRIMARY) {
+                return Some(field.display_value().to_string());
             }
-        }
-        if let Ok(date_time) = metadata.get_tag_string("Exif.Photo.DateTimeOriginal") {
-            if !date_time.is_empty() {
-                return Some(date_time);
-            }
-        }
-        if let Ok(date_time) = metadata.get_tag_string("Exif.Image.DateTime") {
-            if !date_time.is_empty() {
-                return Some(date_time);
+            if let Some(field) = exif.get_field(Tag::DateTime, exif::In::PRIMARY) {
+                return Some(field.display_value().to_string());
             }
         }
         return path
@@ -96,5 +91,42 @@ impl AppState {
 
     pub fn get(&self) -> i32 {
         *self.counter.lock().unwrap()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::env;
+
+    #[test]
+    fn test_counter() {
+        let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        d.push("resources/test");
+
+        let state = AppState::new();
+        state.set_path(d);
+        assert_eq!(state.get(), 0);
+        state.increment();
+        assert_eq!(state.get(), 1);
+    }
+
+    #[test]
+    fn test_metadata() {
+        let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        d.push("resources/test");
+
+        let state = AppState::new();
+        state.set_path(d);
+
+        let metadata0 = state.get_image_metadata(0).expect("not found 0");
+        let metadata1 = state.get_image_metadata(1).expect("not found 1");
+        if metadata0 == "2024-10-28 10:08:33" {
+            assert_eq!(metadata0, "2024-10-28 10:08:33");
+            assert_eq!(metadata1, "2025-02-16 11:14:53");
+        } else {
+            assert_eq!(metadata0, "2025-02-16 11:14:53");
+            assert_eq!(metadata1, "2024-10-28 10:08:33");
+        }
     }
 }
