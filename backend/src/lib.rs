@@ -14,9 +14,14 @@ pub mod slideshow;
 use slideshow::{AppState, Settings};
 
 async fn background_task(state: Arc<AppState>) {
-    let mut interval = interval(Duration::from_secs(2)); // 5 minutes = 300 seconds
-
     loop {
+        let interval_duration = {
+            let settings = state.settings.lock().unwrap();
+            settings.interval
+        };
+
+        let mut interval = interval(Duration::from_secs(interval_duration as u64));
+
         interval.tick().await;
         // Your code here
         state.increment();

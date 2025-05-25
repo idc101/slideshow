@@ -20,7 +20,7 @@ pub struct AppState {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Settings {
     slideshow: String,
-    interval: i32,
+    pub interval: i32,
 }
 
 impl AppState {

@@ -17,6 +17,15 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build
         run: cargo build --release
+      - name: Dist
+        run: |
+          cargo install --locked trunk
+          cargo xtask dist
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: slideshow-linux
+          path: output
 
   test:
     runs-on: ubuntu-latest
@@ -32,6 +41,15 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build
         run: cargo build --release
+      - name: Dist
+        run: |
+          cargo install --locked trunk
+          cargo xtask dist
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: slideshow-windows
+          path: output
 
   test-windows:
     runs-on: windows-latest
