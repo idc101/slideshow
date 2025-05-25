@@ -86,10 +86,23 @@ fn dist_path(metadata: &Metadata, is_release: bool) -> Utf8PathBuf {
 }
 
 fn backend_path(metadata: &Metadata, is_release: bool) -> Utf8PathBuf {
-    metadata
+    let mut path = metadata
         .target_directory
         .join(if is_release { "release" } else { "debug" })
-        .join("backend")
+        .join("backend");
+
+    if std::env::consts::OS == "windows" {
+        path.set_extension("exe");
+    }
+    path
+}
+
+fn backend_exe_name() -> &'static str {
+    if std::env::consts::OS == "windows" {
+        "backend.exe"
+    } else {
+        "backend"
+    }
 }
 
 fn output_default_path(metadata: &Metadata) -> Utf8PathBuf {
@@ -214,10 +227,10 @@ fn install(config: Install) -> Result<()> {
 
     println!(
         "- Copying backend to {}",
-        output_dir.join("backend").bold().fg::<UserGreen>()
+        output_dir.join(backend_exe_name()).bold().fg::<UserGreen>()
     );
 
-    std::fs::copy(backend_path, output_dir.join("backend"))
+    std::fs::copy(backend_path, output_dir.join(backend_exe_name()))
         .wrap_err("Copying the backend failed")?;
 
     Ok(())
