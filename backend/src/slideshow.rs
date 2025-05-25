@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 use std::io::BufReader;
 use std::path::PathBuf;
+use walkdir::WalkDir;
 
 pub struct AppState {
     all_images: Mutex<Vec<PathBuf>>,
@@ -40,18 +41,18 @@ impl AppState {
         let mut images = self.all_images.lock().unwrap();
 
         images.clear();
-        *images = fs::read_dir(pictures_base)
-            .unwrap()
+        *images = WalkDir::new(pictures_base)
+            .into_iter()
+            .filter_map(|e| e.ok())
+            .filter(|e| e.file_type().is_file())
             .filter(|x| {
-                x.as_ref()
-                    .unwrap()
-                    .path()
+                x.path()
                     .extension()
                     .unwrap_or_default()
                     .to_ascii_lowercase()
                     == "jpg"
             })
-            .map(|x| x.unwrap().path())
+            .map(|x| x.path().to_path_buf())
             .collect();
     }
 

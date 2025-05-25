@@ -160,6 +160,7 @@ dependencies = [
  "regex",
  "rocket",
  "serde",
+ "walkdir",
 ]
 
 [[package]]

@@ -19,8 +19,9 @@ jobs:
         run: cargo build --release
       - name: Dist
         run: |
-          cargo install --locked trunk
-          cargo xtask dist
+          rustup target add wasm32-unknown-unknown
+          cargo install trunk
+          cargo xtask install
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -43,8 +44,9 @@ jobs:
         run: cargo build --release
       - name: Dist
         run: |
-          cargo install --locked trunk
-          cargo xtask dist
+          rustup target add wasm32-unknown-unknown
+          cargo install trunk
+          cargo xtask install
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
