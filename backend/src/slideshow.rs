@@ -131,12 +131,15 @@ impl AppState {
         let no_extension = regex::Regex::new(r"\..+$")
             .unwrap()
             .replace_all(&unwrapped, "");
-        let no_date = regex::Regex::new(r"^\d{4}-\d{2}[ -]")
+        let no_date = regex::Regex::new(r"^\d{4}-\d{2}-\d{2}[ -]")
             .unwrap()
             .replace_all(&no_extension, "");
-        let no_datetime = regex::Regex::new(r"\d{8}T\d{6}[-]")
+        let no_year_month = regex::Regex::new(r"^\d{4}-\d{2}[ -]")
             .unwrap()
             .replace_all(&no_date, "");
+        let no_datetime = regex::Regex::new(r"\d{8}T\d{6}[-]")
+            .unwrap()
+            .replace_all(&no_year_month, "");
         let no_three_digits = regex::Regex::new(r"-\d{3}$")
             .unwrap()
             .replace_all(&no_datetime, "");
@@ -199,6 +202,14 @@ mod tests {
                 pictures_base.clone()
             ),
             Some("December".to_string())
+        );
+        assert_eq!(
+            AppState::filename_to_description(
+                PathBuf::from_str("/base/path/2024-12-25 Christmas-20241224T100546-019.jpg")
+                    .unwrap(),
+                pictures_base.clone()
+            ),
+            Some("Christmas".to_string())
         );
     }
 
