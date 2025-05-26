@@ -98,7 +98,8 @@ impl AppState {
                 let date = exif
                     .get_field(Tag::DateTimeOriginal, In::PRIMARY)
                     .or(exif.get_field(Tag::DateTime, In::PRIMARY))
-                    .map(|field| field.display_value().to_string());
+                    .map(|field| field.display_value().to_string())
+                    .map(|s| s.split(" ").next().unwrap().to_string());
 
                 return ImageMetadata { date, description };
             }
@@ -182,8 +183,8 @@ mod tests {
 
         let metadata0 = state.get_image_metadata(0);
         let metadata1 = state.get_image_metadata(1);
-        assert_eq!(metadata0.date.unwrap(), "2024-10-28 10:08:33");
-        assert_eq!(metadata1.date.unwrap(), "2025-02-16 11:14:53");
+        assert_eq!(metadata0.date.unwrap(), "2024-10-28");
+        assert_eq!(metadata1.date.unwrap(), "2025-02-16");
     }
 
     #[test]
