@@ -16,6 +16,7 @@ pub struct AppState {
     counter: Mutex<i32>,
     rng: Mutex<StdRng>,
     pub settings: Mutex<Settings>,
+    pictures_base: Mutex<PathBuf>, // Added pictures_base
 }
 
 // Define the data structure
@@ -41,6 +42,7 @@ impl AppState {
                 slideshow: "slideshow".to_string(),
                 interval: 300,
             }),
+            pictures_base: Mutex::new(PathBuf::new()), // Initialize pictures_base
         };
         new
     }
@@ -52,6 +54,8 @@ impl AppState {
 
     pub fn set_path(&self, pictures_base: PathBuf) {
         let mut images = self.all_images.lock().unwrap();
+        let mut base = self.pictures_base.lock().unwrap(); //save pictures_base
+        *base = pictures_base.clone();
 
         images.clear();
         *images = WalkDir::new(pictures_base)
@@ -86,7 +90,8 @@ impl AppState {
         let mut bufreader = BufReader::new(file);
         let exifreader = ExifReader::new();
 
-        let description = Self::filename_to_description(path.clone());
+        let description =
+            Self::filename_to_description(path.clone(), self.pictures_base.lock().unwrap().clone());
 
         match exifreader.read_from_container(&mut bufreader) {
             Ok(exif) => {
@@ -115,20 +120,20 @@ impl AppState {
         *self.counter.lock().unwrap()
     }
 
-    fn filename_to_description(filename: PathBuf) -> Option<String> {
-        let without_extension = filename
-            .file_stem()
-            .map(|f| f.to_str().map(|s| s.to_string()))
-            .flatten();
+    fn filename_to_description(filename: PathBuf, pictures_base: PathBuf) -> Option<String> {
+        let base_name = filename.strip_prefix(pictures_base).unwrap().to_str();
 
-        if without_extension.is_none() {
+        if base_name.is_none() {
             return None;
         }
 
-        let unwrapped = without_extension.unwrap();
+        let unwrapped = base_name.unwrap();
+        let no_extension = regex::Regex::new(r"\..+$")
+            .unwrap()
+            .replace_all(&unwrapped, "");
         let no_date = regex::Regex::new(r"^\d{4}-\d{2}[ -]")
             .unwrap()
-            .replace_all(unwrapped.as_str(), "");
+            .replace_all(&no_extension, "");
         let no_datetime = regex::Regex::new(r"\d{8}T\d{6}[-]")
             .unwrap()
             .replace_all(&no_date, "");
@@ -180,15 +185,18 @@ mod tests {
 
     #[test]
     fn test_filename_to_description() {
+        let pictures_base = PathBuf::from_str("/base/path").unwrap();
         assert_eq!(
             AppState::filename_to_description(
-                PathBuf::from_str("2025-02 Skiing - La Rosiere-IMG_9969.jpg").unwrap()
+                PathBuf::from_str("/base/path/2025-02 Skiing - La Rosiere/IMG_9969.jpg").unwrap(),
+                pictures_base.clone()
             ),
             Some("Skiing - La Rosiere".to_string())
         );
         assert_eq!(
             AppState::filename_to_description(
-                PathBuf::from_str("2024-12 December-20241224T100546-019.jpg").unwrap()
+                PathBuf::from_str("/base/path/2024-12 December-20241224T100546-019.jpg").unwrap(),
+                pictures_base.clone()
             ),
             Some("December".to_string())
         );
