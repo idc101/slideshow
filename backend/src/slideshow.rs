@@ -193,4 +193,23 @@ mod tests {
             Some("December".to_string())
         );
     }
+
+    #[test]
+    fn test_get_image() {
+        let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        d.push("resources/test");
+
+        let state = AppState::new();
+        state.set_path(d);
+
+        let image0 = state.get_image(0);
+        let image1 = state.get_image(1);
+
+        assert!(image0
+            .to_string_lossy()
+            .ends_with("2024-10 Rome/20241028T100833-061.jpg"));
+        assert!(image1
+            .to_string_lossy()
+            .ends_with("2025-02 Skiing -IMG_0325.jpg"));
+    }
 }
