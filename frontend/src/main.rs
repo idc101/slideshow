@@ -13,6 +13,12 @@ enum Route {
     SettingsForm,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ImageMetadata {
+    pub date: Option<String>,
+    pub description: Option<String>,
+}
+
 #[function_component]
 fn Home() -> Html {
     let time_string = use_state(|| "".to_string());
@@ -183,7 +189,10 @@ pub struct MetadataProps {
 
 #[function_component]
 fn Metadata(props: &MetadataProps) -> Html {
-    let metadata = use_state(|| String::from(""));
+    let metadata = use_state(|| ImageMetadata {
+        date: None,
+        description: None,
+    });
 
     // Fetch items on component mount
     {
@@ -191,13 +200,14 @@ fn Metadata(props: &MetadataProps) -> Html {
         let num = props.num.clone();
         use_effect_with(num, move |_| {
             spawn_local(async move {
-                let fetched: String = Request::get(format!("/api/image/{}/metadata", num).as_str())
-                    .send()
-                    .await
-                    .unwrap()
-                    .text()
-                    .await
-                    .unwrap();
+                let fetched: ImageMetadata =
+                    Request::get(format!("/api/image/{}/metadata", num).as_str())
+                        .send()
+                        .await
+                        .unwrap()
+                        .json()
+                        .await
+                        .unwrap();
                 metadata.set(fetched);
             });
         });
@@ -205,7 +215,24 @@ fn Metadata(props: &MetadataProps) -> Html {
 
     html! {
         <div id="metadata">
-            {(*metadata.clone()).as_str()}
+            {
+                if let Some(date) = &metadata.date {
+                    html! {
+                        <>{ date.to_string() }<br/></>
+                    }
+                } else {
+                    html! {}
+                }
+            }
+            {
+                if let Some(description) = &metadata.description {
+                    html! {
+                        <>{ description.to_string() }<b/></>
+                    }
+                } else {
+                    html! {}
+                }
+            }
         </div>
     }
 }
