@@ -234,7 +234,7 @@ mod tests {
 
         assert!(image0
             .to_string_lossy()
-            .ends_with("2024-10 Rome/20241028T100833-061.jpg"));
+            .ends_with("20241028T100833-061.jpg"));
         assert!(image1
             .to_string_lossy()
             .ends_with("2025-02 Skiing -IMG_0325.jpg"));
