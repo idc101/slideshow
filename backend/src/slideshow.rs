@@ -1,5 +1,7 @@
 use std::sync::Mutex;
 
+use chrono::NaiveDateTime;
+use chrono::TimeZone;
 use exif::Reader as ExifReader;
 use exif::{In, Tag};
 use rand::rngs::StdRng;
@@ -99,7 +101,12 @@ impl AppState {
                     .get_field(Tag::DateTimeOriginal, In::PRIMARY)
                     .or(exif.get_field(Tag::DateTime, In::PRIMARY))
                     .map(|field| field.display_value().to_string())
-                    .map(|s| s.split(" ").next().unwrap().to_string());
+                    .map(|s| {
+                        println!("Date: {}", s);
+                        let datetime =
+                            NaiveDateTime::parse_from_str(&s, "%Y-%m-%d %H:%M:%S").unwrap();
+                        format!("{}", datetime.format("%a %d %h %Y"))
+                    });
 
                 return ImageMetadata { date, description };
             }
@@ -183,8 +190,8 @@ mod tests {
 
         let metadata0 = state.get_image_metadata(0);
         let metadata1 = state.get_image_metadata(1);
-        assert_eq!(metadata0.date.unwrap(), "2024-10-28");
-        assert_eq!(metadata1.date.unwrap(), "2025-02-16");
+        assert_eq!(metadata0.date.unwrap(), "Mon 28 Oct 2024");
+        assert_eq!(metadata1.date.unwrap(), "Sun 16 Feb 2025");
     }
 
     #[test]
