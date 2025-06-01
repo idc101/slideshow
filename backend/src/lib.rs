@@ -111,9 +111,13 @@ pub async fn rocket() -> Result<(), rocket::Error> {
         .ignite()
         .await?;
 
-    let pictures_base = std::env::var_os("PICTURES_BASE")
-        .map(|s| PathBuf::from(s))
-        .unwrap_or_else(|| PathBuf::from("rust-hw"));
+    let pictures_base = std::env::args()
+        .nth(1)
+        .map(PathBuf::from)
+        .or_else(|| std::env::var_os("PICTURES_BASE").map(PathBuf::from))
+        .expect(
+            "Pictures base path not found from command line arguments or environment variable.",
+        );
     state_clone2.set_path(pictures_base);
 
     // Spawn the background task
