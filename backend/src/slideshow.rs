@@ -60,11 +60,13 @@ impl AppState {
         *base = pictures_base.clone();
 
         images.clear();
+        log::info!("Setting pictures_base to: {:?}", pictures_base);
         *images = WalkDir::new(pictures_base)
             .into_iter()
             .filter_map(|e| e.ok())
             .filter(|e| e.file_type().is_file())
             .filter(|x| {
+                log::debug!("Processing file: {:?}", x.path());
                 x.path()
                     .extension()
                     .unwrap_or_default()
@@ -73,6 +75,7 @@ impl AppState {
             })
             .map(|x| x.path().to_path_buf())
             .collect();
+        log::info!("Found {} images", images.len());
     }
 
     pub fn get_current_image(&self) -> PathBuf {
@@ -83,7 +86,10 @@ impl AppState {
 
     pub fn get_image(&self, num: i32) -> PathBuf {
         let images = self.all_images.lock().unwrap();
-        images.get((num as usize) % images.len()).unwrap().clone()
+        let index = (num as usize) % images.len();
+        let image = images.get(index).unwrap().clone();
+        log::info!("get_image: num={}, index={}, image={:?}", num, index, image);
+        image
     }
 
     pub fn get_image_metadata(&self, num: i32) -> ImageMetadata {
@@ -102,7 +108,6 @@ impl AppState {
                     .or(exif.get_field(Tag::DateTime, In::PRIMARY))
                     .map(|field| field.display_value().to_string())
                     .map(|s| {
-                        println!("Date: {}", s);
                         let datetime =
                             NaiveDateTime::parse_from_str(&s, "%Y-%m-%d %H:%M:%S").unwrap();
                         format!("{}", datetime.format("%a %d %h %Y"))

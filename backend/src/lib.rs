@@ -52,7 +52,6 @@ fn update_settings(new_settings: Json<Settings>, state: &State<Arc<AppState>>) -
 #[get("/image/<num>")]
 pub async fn image(num: i32, state: &State<Arc<AppState>>) -> NamedFile {
     let image = state.get_image(num);
-    println!("{}", image.display());
 
     NamedFile::open(image).await.ok().unwrap()
 }
