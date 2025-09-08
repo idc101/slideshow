@@ -1,11 +1,10 @@
 use std::sync::Mutex;
 
 use chrono::NaiveDateTime;
-use chrono::TimeZone;
 use exif::Reader as ExifReader;
 use exif::{In, Tag};
 use rand::rngs::StdRng;
-use rand::seq::IndexedRandom;
+use rand::seq::{IndexedRandom, SliceRandom};
 use rand::SeedableRng;
 use serde::{Deserialize, Serialize};
 use std::fs;
@@ -75,6 +74,11 @@ impl AppState {
             })
             .map(|x| x.path().to_path_buf())
             .collect();
+
+        // Randomize the order of images
+        let mut rng = self.rng.lock().unwrap();
+        images.shuffle(&mut rng);
+
         log::info!("Found {} images", images.len());
     }
 
@@ -144,9 +148,12 @@ impl AppState {
         let no_extension = regex::Regex::new(r"\..+$")
             .unwrap()
             .replace_all(&unwrapped, "");
-        let no_date = regex::Regex::new(r"^\d{4}-\d{2}-\d{2}[ -]")
+        let no_year_folder = regex::Regex::new(r"^\d{4}/")
             .unwrap()
             .replace_all(&no_extension, "");
+        let no_date = regex::Regex::new(r"^\d{4}-\d{2}-\d{2}[ -]")
+            .unwrap()
+            .replace_all(&no_year_folder, "");
         let no_year_month = regex::Regex::new(r"^\d{4}-\d{2}[ -]")
             .unwrap()
             .replace_all(&no_date, "");
@@ -205,6 +212,14 @@ mod tests {
         assert_eq!(
             AppState::filename_to_description(
                 PathBuf::from_str("/base/path/2025-02 Skiing - La Rosiere/IMG_9969.jpg").unwrap(),
+                pictures_base.clone()
+            ),
+            Some("Skiing - La Rosiere".to_string())
+        );
+        assert_eq!(
+            AppState::filename_to_description(
+                PathBuf::from_str("/base/path/2025/2025-02 Skiing - La Rosiere/IMG_9969.jpg")
+                    .unwrap(),
                 pictures_base.clone()
             ),
             Some("Skiing - La Rosiere".to_string())
