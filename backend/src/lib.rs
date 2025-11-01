@@ -93,6 +93,7 @@ pub async fn rocket() -> Result<(), rocket::Error> {
     }
 
     let app_state = Arc::new(AppState::new());
+
     let state_clone = app_state.clone();
     let state_clone2 = app_state.clone();
 

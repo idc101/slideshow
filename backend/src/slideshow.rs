@@ -35,13 +35,17 @@ pub struct ImageMetadata {
 
 impl AppState {
     pub fn new() -> Self {
+        let interval = std::env::var("SLIDESHOW_INTERVAL")
+            .ok()
+            .and_then(|s| s.parse::<i32>().ok())
+            .unwrap_or(300);
         let new = Self {
             all_images: Mutex::new(Vec::new()),
             counter: Mutex::new(0),
             rng: Mutex::new(StdRng::from_os_rng()),
             settings: Mutex::new(Settings {
                 slideshow: "slideshow".to_string(),
-                interval: 300,
+                interval,
             }),
             pictures_base: Mutex::new(PathBuf::new()), // Initialize pictures_base
         };
