@@ -1,0 +1,36 @@
+{
+  "name": "photo-slideshow",
+  "version": "1.0.0",
+  "description": "A web-based slideshow application to randomly display images from a directory. It is built with Rust, featuring a Rocket backend server and a Yew frontend framework.",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "test": "jest",
+    "pm2": "pm2 start dist/index.js --name slideshow"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/idc101/slideshow.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/idc101/slideshow/issues"
+  },
+  "homepage": "https://github.com/idc101/slideshow#readme",
+  "dependencies": {
+    "exifreader": "^4.36.2",
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^25.3.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.4.6",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  }
+}
