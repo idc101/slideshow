@@ -55,7 +55,7 @@ This setup runs slideshow in docker and launches a fullscreen Chromium browser w
 1. Install Chromium browser:
 ```bash
 sudo apt-get update
-sudo apt-get install chromium-browser
+sudo apt-get install chromium
 ```
 
 2. Install Slideshow:
