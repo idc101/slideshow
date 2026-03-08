@@ -13,11 +13,13 @@ state.setPath(picturesBase);
 app.use(express.static(path.join(__dirname, '../public')));
 
 app.get('/api/settings', (req, res) => {
+    console.log(`[${new Date().toISOString()}] GET /api/settings - serving settings`);
     res.json(state.settings);
 });
 
 app.get('/api/image/:num', (req, res) => {
     const num = parseInt(req.params.num, 10);
+    console.log(`[${new Date().toISOString()}] GET /api/image/${num} - serving image`);
     if (isNaN(num)) {
         return res.status(400).send('Invalid image number');
     }
@@ -31,6 +33,7 @@ app.get('/api/image/:num', (req, res) => {
 
 app.get('/api/image/:num/metadata', async (req, res) => {
     const num = parseInt(req.params.num, 10);
+    console.log(`[${new Date().toISOString()}] GET /api/image/${num}/metadata - serving metadata`);
     if (isNaN(num)) {
         return res.status(400).send('Invalid image number');
     }

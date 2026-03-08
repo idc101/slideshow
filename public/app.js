@@ -1,9 +1,17 @@
 let settings = null;
 let currentImageNum = -1;
 
+function log(msg) {
+    console.log(`[${new Date().toISOString()}] ${msg}`);
+}
+
 // --- Face Detection Setup ---
 let facefinder_classify_region = function (r, c, s, pixels, ldim) { return -1.0; };
 fetch('/facefinder').then(function (response) {
+    if (!response.ok) {
+        console.error('Failed to fetch facefinder cascade file:', response.status);
+        return;
+    }
     response.arrayBuffer().then(function (buffer) {
         let bytes = new Int8Array(buffer);
         facefinder_classify_region = pico.unpack_cascade(bytes);
@@ -61,6 +69,7 @@ function findFaces(img) {
             });
         }
     }
+    log(`Detected ${faces.length} faces from pico.js on ${img.src}`);
     return faces;
 }
 
@@ -190,6 +199,9 @@ async function fetchSettings() {
 async function updateImage() {
     if (!settings) {
         await fetchSettings();
+        if (settings) {
+            log(`Loaded settings. Ken Burns effect is: ${settings.kenBurns ? 'ON' : 'OFF'}`);
+        }
     }
     if (!settings) return;
 
@@ -212,8 +224,10 @@ async function updateImage() {
 
         if (settings.kenBurns) {
             // Load image in background first for processing
+            log(`Loading new image for Ken Burns: ${nextSrc}`);
             const img = new Image();
             img.onload = () => {
+                log(`Image loaded completely: ${nextSrc}. Applying Ken Burns math.`);
                 imgElement.src = nextSrc;
                 applyKenBurns(imgElement, img, settings.interval * 1000);
             };
