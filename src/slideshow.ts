@@ -10,13 +10,15 @@ export interface ImageMetadata {
 export class AppState {
     allImages: string[] = [];
     counter: number = 0;
-    settings: { slideshow: string; interval: number };
+    settings: { slideshow: string; interval: number; kenBurns: boolean };
     picturesBase: string;
 
     constructor() {
         const intervalStr = process.env.SLIDESHOW_INTERVAL || '300';
         const interval = parseInt(intervalStr, 10);
-        this.settings = { slideshow: 'slideshow', interval: isNaN(interval) ? 300 : interval };
+        const kenBurnsStr = process.env.KEN_BURNS || 'false';
+        const kenBurns = kenBurnsStr.toLowerCase() === 'true' || kenBurnsStr === '1';
+        this.settings = { slideshow: 'slideshow', interval: isNaN(interval) ? 300 : interval, kenBurns };
         this.picturesBase = '';
     }
 
@@ -44,7 +46,8 @@ export class AppState {
             if (file.isDirectory()) {
                 this.scanDirectory(res);
             } else {
-                if (path.extname(res).toLowerCase() === '.jpg') {
+                const ext = path.extname(res).toLowerCase();
+                if (ext === '.jpg' || ext === '.jpeg' || ext === '.png' || ext === '.webp') {
                     this.allImages.push(res);
                 }
             }

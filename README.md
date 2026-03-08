@@ -54,6 +54,14 @@ The application can be configured through the following environment variables:
 
 This setup runs the slideshow with PM2 and launches a fullscreen Chromium browser with the slideshow URL to display on HDMI.
 
+DISPLAY=:0 xdotool key F5
+
+sudo apt install cec-utils xdotool realvnc-vnc-server
+
+
+  cat .config/lxsession/LXDE-pi/autostart
+  @sh /home/iain/bin/start-chromium.sh
+
 1. Install Chromium browser:
 ```bash
 sudo apt-get update
