@@ -98,8 +98,8 @@ function generateKenBurnsState(imgWidth, imgHeight, vw, vh, faces) {
         }
 
         const padding = 50;
-        const minTxFace = vw - padding - fRight * S;
-        const maxTxFace = padding - fLeft * S;
+        const minTxFace = padding - fLeft * S;
+        const maxTxFace = vw - padding - fRight * S;
 
         let validMinTx = Math.max(minTxImg, minTxFace);
         let validMaxTx = Math.min(maxTxImg, maxTxFace);
@@ -111,8 +111,8 @@ function generateKenBurnsState(imgWidth, imgHeight, vw, vh, faces) {
             tx = validMinTx + Math.random() * (validMaxTx - validMinTx);
         }
 
-        const minTyFace = vh - padding - fBottom * S;
-        const maxTyFace = padding - fTop * S;
+        const minTyFace = padding - fTop * S;
+        const maxTyFace = vh - padding - fBottom * S;
 
         let validMinTy = Math.max(minTyImg, minTyFace);
         let validMaxTy = Math.min(maxTyImg, maxTyFace);
@@ -138,19 +138,40 @@ function applyKenBurns(imgElement, imgObj, durationMs) {
     const vw = window.innerWidth;
     const vh = window.innerHeight;
 
-    // Find faces first
-    const faces = findFaces(imgObj);
+    // Find faces first natively
+    const nativeFaces = findFaces(imgObj);
+
+    // Calculate base dimensions that exactly cover the screen
+    const aspect = imgObj.naturalWidth / imgObj.naturalHeight;
+    const screenAspect = vw / vh;
+
+    let baseWidth, baseHeight;
+    if (aspect > screenAspect) {
+        baseHeight = vh;
+        baseWidth = vh * aspect;
+    } else {
+        baseWidth = vw;
+        baseHeight = vw / aspect;
+    }
+
+    // Scale faces to base dimensions
+    const scaleFactor = baseWidth / imgObj.naturalWidth;
+    const faces = nativeFaces.map(f => ({
+        r: f.r * scaleFactor,
+        c: f.c * scaleFactor,
+        s: f.s * scaleFactor
+    }));
 
     // Apply necessary styles
     imgElement.style.position = 'absolute';
     imgElement.style.transformOrigin = '0 0';
-    imgElement.style.width = imgObj.naturalWidth + 'px';
-    imgElement.style.height = imgObj.naturalHeight + 'px';
+    imgElement.style.width = baseWidth + 'px';
+    imgElement.style.height = baseHeight + 'px';
     imgElement.style.objectFit = 'fill';
 
     // Generate two states
-    const state1 = generateKenBurnsState(imgObj.naturalWidth, imgObj.naturalHeight, vw, vh, faces);
-    const state2 = generateKenBurnsState(imgObj.naturalWidth, imgObj.naturalHeight, vw, vh, faces);
+    const state1 = generateKenBurnsState(baseWidth, baseHeight, vw, vh, faces);
+    const state2 = generateKenBurnsState(baseWidth, baseHeight, vw, vh, faces);
 
     if (currentAnimation) {
         currentAnimation.cancel();
@@ -228,9 +249,15 @@ async function updateImage() {
             log(`Loading new image for Ken Burns: ${nextSrc}`);
             const img = new Image();
             img.onload = () => {
-                log(`Image loaded completely: ${nextSrc}. Applying Ken Burns math.`);
-                imgElement.src = nextSrc;
-                applyKenBurns(imgElement, img, settings.interval * 1000);
+                if (img.naturalHeight > img.naturalWidth) {
+                    log(`Image ${nextSrc} is portrait. Skipping Ken Burns.`);
+                    disableKenBurns(imgElement);
+                    imgElement.src = nextSrc;
+                } else {
+                    log(`Image loaded completely: ${nextSrc}. Applying Ken Burns math.`);
+                    imgElement.src = nextSrc;
+                    applyKenBurns(imgElement, img, settings.interval * 1000);
+                }
             };
             img.src = nextSrc;
         } else {

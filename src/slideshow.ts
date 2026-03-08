@@ -47,7 +47,7 @@ export class AppState {
                 this.scanDirectory(res);
             } else {
                 const ext = path.extname(res).toLowerCase();
-                if (ext === '.jpg' || ext === '.jpeg' || ext === '.png' || ext === '.webp') {
+                if (ext === '.jpg' || ext === '.jpeg' || ext === '.png' || ext === '.webp' || ext === '.heic' || ext === '.heif') {
                     this.allImages.push(res);
                 }
             }
