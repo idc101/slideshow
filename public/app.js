@@ -1,5 +1,6 @@
 let settings = null;
 let currentImageNum = -1;
+let timeOffset = 0;
 
 function log(msg) {
     console.log(`[${new Date().toISOString()}] ${msg}`);
@@ -205,7 +206,7 @@ async function updateImage() {
     }
     if (!settings) return;
 
-    const ts = Math.floor(Date.now() / 1000);
+    const ts = Math.floor(Date.now() / 1000) + timeOffset;
     const newImageNum = Math.floor(ts / settings.interval);
 
     if (newImageNum !== currentImageNum) {
@@ -238,6 +239,21 @@ async function updateImage() {
         }
     }
 }
+
+// Keyboard controls
+window.addEventListener('keydown', (e) => {
+    if (!settings) return;
+    if (e.key === 'ArrowRight') {
+        timeOffset += settings.interval;
+        updateImage();
+    } else if (e.key === 'ArrowLeft') {
+        timeOffset -= settings.interval;
+        updateImage();
+    } else if (e.key === '0') {
+        timeOffset = 0;
+        updateImage();
+    }
+});
 
 // Initialization
 setInterval(updateClock, 1000);
